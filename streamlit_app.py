@@ -26,20 +26,24 @@ except Exception as e:
     st.error(f"Could not connect to Snowflake: {e}")
     st.stop()
 
-# --- 3. THE "LAZY LOADING" ENGINE (WITH HEARTBEAT FIX) ---
+# --- 3. THE "LAZY LOADING" ENGINE (V4: TIMEZONE SAFE) ---
 def run_live_update():
     if "openai" in st.secrets:
         try:
-            # Check last update time
+            # 1. ASK SNOWFLAKE FOR THE TIME DIFFERENCE (Solves Timezone Loop)
+            # We use DATEDIFF in SQL so the DB compares its own clock to its own data.
             try:
-                last_update_df = session.sql("SELECT MAX(PUBLISH_DATE) as LAST_SYNC FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT").to_pandas()
-                last_sync = pd.to_datetime(last_update_df['LAST_SYNC'].iloc[0]) if not last_update_df.empty and last_update_df['LAST_SYNC'].iloc[0] else datetime.now() - timedelta(days=1)
+                freshness_query = """
+                SELECT DATEDIFF('minute', MAX(PUBLISH_DATE), CURRENT_TIMESTAMP()) 
+                FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT
+                """
+                # If table is empty, this returns None, so we set it to 999
+                minutes_diff = session.sql(freshness_query).collect()[0][0]
+                if minutes_diff is None: minutes_diff = 999
             except:
-                last_sync = datetime.now() - timedelta(days=1)
+                minutes_diff = 999
             
-            # If data is older than 15 minutes, trigger refresh
-            minutes_diff = (datetime.now() - last_sync).total_seconds() / 60
-            
+            # 2. If data is older than 15 minutes, trigger refresh
             if minutes_diff > 15:
                 with st.spinner('⚡ Detecting Stale Data... AI Agent is fetching live global news...'):
                     # A. Fetch News
@@ -53,7 +57,8 @@ def run_live_update():
                         try:
                             d = feedparser.parse(feed)
                             for entry in d.entries[:3]: 
-                                articles.append({"TITLE": entry.title, "URL": entry.link, "PUBLISHED": datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+                                # Use Snowflake's CURRENT_TIMESTAMP() in the INSERT to match clocks
+                                articles.append({"TITLE": entry.title, "URL": entry.link})
                         except: pass
                     
                     # B. Score with AI
@@ -71,10 +76,14 @@ def run_live_update():
                             raw = response.choices[0].message.content.strip().split('|')
                             if len(raw) == 3 and raw[0] != 'MARKET':
                                 ticker, event, score = raw[0].strip(), raw[1].strip(), float(raw[2])
+                                
+                                # Handle TSMC -> TSM mapping (Yahoo Finance quirk)
+                                if ticker == 'TSMC': ticker = 'TSM'
+
                                 # Insert News
                                 session.sql(f"""
                                     INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
-                                    SELECT '{art['PUBLISHED']}', '{art['TITLE'].replace("'", "''")}', '{art['URL']}', '{ticker}', '{event}', {score}
+                                    SELECT CURRENT_TIMESTAMP(), '{art['TITLE'].replace("'", "''")}', '{art['URL']}', '{ticker}', '{event}', {score}
                                     WHERE NOT EXISTS (SELECT 1 FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT WHERE TITLE = '{art['TITLE'].replace("'", "''")}')
                                 """).collect()
                                 new_tickers.append(ticker)
@@ -105,8 +114,9 @@ def run_live_update():
                                     """).collect()
                             except: pass
                     
-                    # D. THE HEARTBEAT FIX (Resets the clock!)
-                    # We insert a dummy record to update MAX(PUBLISH_DATE) so the loop stops.
+                    # D. THE HEARTBEAT (Resets the clock!)
+                    # We insert a dummy record so MAX(PUBLISH_DATE) becomes NOW.
+                    # This ensures DATEDIFF is 0 on the next run, breaking the loop.
                     session.sql(f"""
                         INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
                         VALUES (CURRENT_TIMESTAMP(), 'System Heartbeat', 'N/A', 'SYSTEM', 'SYNC', 0.0)
@@ -116,7 +126,6 @@ def run_live_update():
                     time.sleep(2)
                     st.rerun()
         except Exception as e:
-            # Log error but don't crash
             print(f"Sync skipped: {e}")
 
 # TRIGGER LIVE UPDATE
