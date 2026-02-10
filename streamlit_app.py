@@ -316,23 +316,23 @@ with tab1:
             theme_counts.columns = ['Theme', 'Count']
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
             
-            # --- FIX: ADDED TOP MARGIN FOR ZOOM BUTTONS ---
-            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=40, b=10), autosize=True)
+            # --- FIX: INCREASED TOP & BOTTOM MARGIN FOR ZOOM BUTTONS ---
+            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=50, b=30), autosize=True)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True, config={'displayModeBar': True})
             
             with st.expander("Drill Down: Inspect Themes & Definitions"):
-                # --- FIX: EXPANDED DEFINITIONS ---
+                # --- FIX: ADDED MISSING BUCKETS ---
                 st.markdown("""
                 **Narrative Bucket Definitions:**
                 * **Macro:** Central Bank Policy, Inflation, GDP Data, Sovereign Debt.
                 * **Earnings:** Quarterly Results, Guidance, Revenue & EPS Surprises.
-                * **Tech:** Artificial Intelligence (AI), Semiconductors, Cloud Computing, SaaS.
-                * **Mergers:** M&A, Spinoffs, Hostile Takeovers, Strategic Partnerships.
-                * **Regulation:** Antitrust Lawsuits, FDA Approvals, Government Policy Changes.
-                * **Crypto:** Bitcoin/Ethereum Price Action, Regulatory News, Adoption.
+                * **Tech:** AI, Cloud Computing, Semiconductors, SaaS.
+                * **Mergers:** M&A, Spinoffs, Hostile Takeovers.
+                * **Regulation:** Antitrust, Government Policy, FDA Approvals.
+                * **Crypto:** Digital Asset Prices, Regulation, Adoption.
                 * **Personal Finance:** Consumer Credit, Mortgage Rates, Savings Trends.
-                * **Product:** New Launches, R&D Breakthroughs, Recalls.
+                * **Product:** New Launches, R&D Breakthroughs.
                 """)
                 options = theme_counts['Theme'].tolist()
                 theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
