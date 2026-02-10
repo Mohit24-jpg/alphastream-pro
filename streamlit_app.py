@@ -103,15 +103,23 @@ def update_market_data():
 # --- PROFESSIONAL CSS & MOBILE FIX ---
 st.markdown("""
 <style>
-    /* GLOBAL STYLES */
-    .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; }
+    /* 1. FORCE LIGHT MODE (Fixes invisible text on iPhones) */
+    :root {
+        color-scheme: light only;
+    }
+    
+    /* 2. GLOBAL STYLES */
+    .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; color: #172b4d; }
     h1 { color: #172b4d; font-weight: 800; margin-bottom: 0px; }
     h2, h3 { color: #172b4d; font-weight: 700; }
+    p, div, label, span { color: #172b4d !important; } /* Force all text dark */
+    
+    /* 3. HIDE CLUTTER */
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* DESKTOP CARDS */
+    /* 4. DESKTOP CARDS */
     div.css-1r6slb0, div.stDataFrame, div.stPlotlyChart {
         background-color: white; padding: 24px; border-radius: 8px; border: 1px solid #e1e4e8; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -119,36 +127,46 @@ st.markdown("""
     div[data-testid="stMetric"] {
         background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e1e4e8; border-left: 4px solid #0052cc;
     }
+    
+    /* 5. GUIDE CARDS (From your specific request) */
+    .guide-card {
+        background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
+        border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
+    }
+    .guide-title {
+        font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .methodology-card {
+        background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04); height: 100%;
+    }
+    .source-badge {
+        background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; 
+        font-size: 0.8rem; font-weight: 600; display: inline-block; margin-bottom: 10px;
+    }
 
     /* === AGGRESSIVE MOBILE OPTIMIZATION (Screens < 768px) === */
     @media (max-width: 768px) {
-        /* 1. Shrink Top Padding */
+        /* Kill top padding */
         .block-container {
             padding-top: 1rem !important;
             padding-left: 0.5rem !important;
             padding-right: 0.5rem !important;
         }
         
-        /* 2. Shrink Title & Text */
-        h1 { font-size: 1.5rem !important; }
-        p { font-size: 0.9rem !important; }
-        
-        /* 3. Resize Metrics */
-        div[data-testid="stMetricValue"] { font-size: 1.2rem !important; }
-        div[data-testid="stMetricLabel"] { font-size: 0.8rem !important; }
-        
-        /* 4. Make Columns Stack & Fit */
+        /* Stack Columns Vertically */
         [data-testid="column"] {
             width: 100% !important;
             min-width: 100% !important;
             margin-bottom: 10px !important;
+            flex: 1 1 auto !important;
         }
         
-        /* 5. Fix Button Sizing */
-        .stButton button {
-            width: 100%;
-            padding: 0.25rem 0.5rem !important;
-        }
+        /* Resize Fonts */
+        h1 { font-size: 1.5rem !important; }
+        
+        /* Full width buttons */
+        .stButton button { width: 100%; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -187,7 +205,7 @@ with c1:
     st.title("AlphaStream Pro")
     st.markdown("<div style='margin-top: -5px; margin-bottom: 10px; font-size: 1.0rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
     st.markdown("""
-    **Real-Time Institutional Sentiment & Fundamental Intelligence**
+    **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
     """, unsafe_allow_html=True)
 with c2:
     if st.button("Refresh Data", type="primary"): 
@@ -235,9 +253,10 @@ tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"]
 # === TAB 1: MARKET PULSE ===
 with tab1:
     st.markdown("""
-    <div style="background-color: #ebf3fc; padding: 12px; border-radius: 6px; border-left: 4px solid #0052cc; margin-bottom: 20px; font-size: 0.85rem;">
-        <b>Market Pulse:</b> Visualizes the aggregate emotion of the market. <br>
-        (<span style='color:#4CAF50'><b>Green</b></span> = Bullish, <span style='color:#FF5252'><b>Red</b></span> = Bearish).
+    <div class="guide-card">
+        <div class="guide-title">Market Pulse: Sentiment & Themes</div>
+        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. (Green = Bullish, Red = Bearish).<br>
+        • <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds (Bloomberg, Yahoo, Reuters). If a stock isn't in the news, it won't appear here.
     </div>
     """, unsafe_allow_html=True)
 
@@ -252,7 +271,7 @@ with tab1:
             fig_hist.update_layout(height=350, bargap=0.1, showlegend=False, margin=dict(l=20, r=20, t=20, b=20))
             st.plotly_chart(fig_hist, use_container_width=True)
             
-            with st.expander("Drill Down: Filter by Sentiment Range"):
+            with st.expander("Drill Down: Inspect Sentiment Drivers"):
                 min_s, max_s = float(display_df['SENTIMENT_SCORE'].min()), float(display_df['SENTIMENT_SCORE'].max())
                 if min_s == max_s: min_s -= 0.01; max_s += 0.01
                 values = st.slider("Select Sentiment Range", min_s, max_s, (min_s, max_s))
@@ -270,10 +289,9 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
-            with st.expander("Drill Down: Inspect Themes & Definitions"):
-                st.markdown("**Narrative Bucket Definitions:**<br>* **Macro:** Fed policy, Rates, Inflation.<br>* **Earnings:** Quarterly reports, Revenue.<br>* **Mergers:** M&A activity, Buyouts.", unsafe_allow_html=True)
+            with st.expander("Drill Down: Inspect Themes"):
                 options = theme_counts['Theme'].tolist()
-                theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
+                theme = st.selectbox("Select Theme:", options=options) if options else None
                 if theme:
                     subset = display_df[display_df['EVENT_TYPE'] == theme][['TICKER', 'TITLE', 'URL']]
                     st.dataframe(subset, hide_index=True, use_container_width=True, column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
@@ -305,9 +323,10 @@ with tab1:
 # === TAB 2: ALPHA HUNTER ===
 with tab2:
     st.markdown("""
-    <div style="background-color: #ebf3fc; padding: 12px; border-radius: 6px; border-left: 4px solid #0052cc; margin-bottom: 20px; font-size: 0.85rem;">
-        <b>Strategy:</b> Identify arbitrage by correlating Fundamental News (X-Axis) with Technical Price (Y-Axis).<br>
-        <b>Opportunity Zone:</b> Assets with High Sentiment (>0.5) but Lagging Price (<1%).
+    <div class="guide-card">
+        <div class="guide-title">Alpha Hunter: Arbitrage Identification</div>
+        • <b>Strategy:</b> Identify arbitrage by correlating Fundamental News (X-Axis) with Technical Price (Y-Axis).<br>
+        • <b>Opportunity Zone:</b> Assets with High Sentiment (>0.5) but Lagging Price (<1%). These represent potential value disconnects.
     </div>
     """, unsafe_allow_html=True)
 
@@ -337,11 +356,33 @@ with tab2:
 # === TAB 3: CREDIBILITY CHECK ===
 with tab3:
     st.markdown("""
-    <div style="background-color: #ebf3fc; padding: 12px; border-radius: 6px; border-left: 4px solid #0052cc; margin-bottom: 20px; font-size: 0.85rem;">
-        <b>The Opinion Gap:</b> Visualizes the difference between Real-Time News (AI) and Historical Models (Analysts).
+    <div class="guide-card">
+        <div class="guide-title">The Divergence Engine: AI vs. Wall St.</div>
+        • <b>The Opinion Gap:</b> Visualizes the difference between Real-Time News (AI) and Historical Models (Analysts).<br>
+        • <b>How to Read:</b> Large gaps indicate high-volatility events where the AI may be detecting news before analysts have updated their ratings.
     </div>
     """, unsafe_allow_html=True)
     
+    c_m1, c_m2 = st.columns(2)
+    with c_m1:
+        st.markdown("""
+        <div class="methodology-card">
+            <div class="guide-title">🤖 AlphaStream Sentiment</div>
+            <b>Source:</b> Real-time NLP analysis of Global RSS Feeds (Yahoo, Reuters).<br>
+            <b>Method:</b> GPT-3.5 scores every headline (-1 to +1) instantly.<br>
+            <b>Edge:</b> Reacts to news in <i>seconds</i>.
+        </div>
+        """, unsafe_allow_html=True)
+    with c_m2:
+        st.markdown("""
+        <div class="methodology-card">
+            <div class="guide-title">🏢 Analyst Consensus</div>
+            <b>Source:</b> Aggregate Buy/Hold/Sell ratings from Major Banks.<br>
+            <b>Method:</b> Fundamental Discounted Cash Flow (DCF) models.<br>
+            <b>Edge:</b> Reacts to news in <i>weeks/months</i>.
+        </div>
+        """, unsafe_allow_html=True)
+
     if not display_df.empty:
         comp_df = display_df.groupby('TICKER')[['SENTIMENT_SCORE', 'ANALYST_RATING', 'PE_RATIO', 'PRICE_TO_BOOK', 'URL', 'TITLE']].agg(
             {'SENTIMENT_SCORE': 'mean', 'ANALYST_RATING': 'first', 'PE_RATIO': 'max', 'PRICE_TO_BOOK': 'max', 'URL': 'first', 'TITLE': 'first'}
