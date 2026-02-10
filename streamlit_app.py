@@ -190,7 +190,7 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS ---
+# --- KPI CARDS (SMART LOGIC) ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
@@ -263,31 +263,44 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
 
-    # --- FORENSIC ANALYSIS SECTION (INTERACTIVE) ---
+    # --- FORENSIC ANALYSIS SECTION (RESTORED & IMPROVED) ---
     st.subheader("Forensic Sentiment Analysis")
-    st.markdown("This tool calculates the **Weight** of every article to show you exactly what is moving the needle.")
+    st.markdown("Select specific articles to calculate their individual **Weight** vs. the Market Average.")
     
     if not display_df.empty:
-        display_df['Impact Factor'] = display_df['SENTIMENT_SCORE'].abs()
-        
-        # INTERACTIVE FILTER
+        # 1. User selects articles
         drivers = sorted(display_df['TITLE'].unique().tolist())
-        selected_drivers = st.multiselect("Isolate Specific Headlines or Drivers:", drivers)
+        selected_drivers = st.multiselect("Isolate Specific Headlines / Drivers:", drivers)
+        
+        # 2. Logic: Compare Selection vs. Global
+        global_avg = display_df['SENTIMENT_SCORE'].mean()
         
         if selected_drivers:
-            impact_df = display_df[display_df['TITLE'].isin(selected_drivers)].sort_values('Impact Factor', ascending=False)
+            # Filter the subset
+            subset_df = display_df[display_df['TITLE'].isin(selected_drivers)]
+            subset_avg = subset_df['SENTIMENT_SCORE'].mean()
+            delta = subset_avg - global_avg
+            
+            # 3. Show Impact Metrics
+            m1, m2, m3 = st.columns(3)
+            with m1: st.metric("Global Market Score", f"{global_avg:.2f}")
+            with m2: st.metric("Selected Driver Score", f"{subset_avg:.2f}")
+            with m3: st.metric("Net Impact (Divergence)", f"{delta:.2f}", delta=f"{delta:.2f}")
+            
+            # Show the table for context
+            st.dataframe(subset_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], use_container_width=True, hide_index=True)
         else:
-            impact_df = display_df.sort_values('Impact Factor', ascending=False).head(10)
-        
-        st.dataframe(
-            impact_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
-            use_container_width=True, hide_index=True,
-            column_config={
-                "SENTIMENT_SCORE": st.column_config.ProgressColumn("Sentiment Strength", min_value=-1, max_value=1, format="%.2f"),
-                "URL": st.column_config.LinkColumn("Evidence", display_text="Read Source"),
-                "TITLE": "Headline Driver"
-            }
-        )
+            # Default View
+            st.info("👆 Select articles above to see their specific contribution to the score.")
+            st.dataframe(
+                display_df.sort_values('SENTIMENT_SCORE', ascending=False).head(10)[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
+                use_container_width=True, hide_index=True,
+                column_config={
+                    "SENTIMENT_SCORE": st.column_config.ProgressColumn("Sentiment Strength", min_value=-1, max_value=1, format="%.2f"),
+                    "URL": st.column_config.LinkColumn("Evidence", display_text="Read Source"),
+                    "TITLE": "Top Headlines"
+                }
+            )
 
 # === TAB 2: ALPHA HUNTER ===
 with tab2:
