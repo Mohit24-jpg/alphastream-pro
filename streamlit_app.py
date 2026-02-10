@@ -1,4 +1,5 @@
 import streamlit as st
+from snowflake.snowpark import Session
 from snowflake.snowpark.context import get_active_session
 import pandas as pd
 import plotly.express as px
@@ -7,20 +8,31 @@ from datetime import datetime, timedelta
 import time
 import feedparser
 from openai import OpenAI
-import snowflake.connector
 import yfinance as yf
 
 # 1. PAGE CONFIG
 st.set_page_config(layout="wide", page_title="AlphaStream Pro", page_icon="📈")
 
-# --- 2. THE "LAZY LOADING" ENGINE ---
-# This function checks if data is stale and updates it ON THE FLY.
+# --- 2. SESSION HANDLER (THE FIX) ---
+def create_snowpark_session():
+    # If we are on Streamlit Cloud, build session from secrets
+    if "connections" in st.secrets and "snowflake" in st.secrets["connections"]:
+        return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
+    else:
+        # Fallback for local development if you have a default connection set up
+        return get_active_session()
+
+# Initialize the session globally
+try:
+    session = create_snowpark_session()
+except Exception as e:
+    st.error(f"Could not connect to Snowflake: {e}")
+    st.stop()
+
+# --- 3. THE "LAZY LOADING" ENGINE ---
 def run_live_update():
-    # Only run this if we have the secrets (i.e., we are on the cloud)
-    if "snowflake" in st.secrets:
+    if "openai" in st.secrets:
         try:
-            session = get_active_session()
-            
             # 1. Check last update time
             try:
                 last_update_df = session.sql("SELECT MAX(PUBLISH_DATE) as LAST_SYNC FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT").to_pandas()
@@ -48,60 +60,58 @@ def run_live_update():
                         except: pass
                     
                     # B. Score with AI
-                    if "openai" in st.secrets:
-                        client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-                        new_tickers = []
-                        
-                        for art in articles:
-                            try:
-                                prompt = f"Analyze: '{art['TITLE']}'. Output: TICKER|EVENT|SCORE (-1.0 to 1.0). If no specific ticker, use MARKET."
-                                response = client.chat.completions.create(
-                                    model="gpt-3.5-turbo",
-                                    messages=[{"role": "user", "content": prompt}],
-                                    temperature=0
-                                )
-                                raw = response.choices[0].message.content.strip().split('|')
-                                if len(raw) == 3 and raw[0] != 'MARKET':
-                                    ticker, event, score = raw[0].strip(), raw[1].strip(), float(raw[2])
-                                    # Safe Insert
-                                    session.sql(f"""
-                                        INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
-                                        SELECT '{art['PUBLISHED']}', '{art['TITLE'].replace("'", "''")}', '{art['URL']}', '{ticker}', '{event}', {score}
-                                        WHERE NOT EXISTS (SELECT 1 FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT WHERE TITLE = '{art['TITLE'].replace("'", "''")}')
-                                    """).collect()
-                                    new_tickers.append(ticker)
-                            except: pass
+                    client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+                    new_tickers = []
+                    
+                    for art in articles:
+                        try:
+                            prompt = f"Analyze: '{art['TITLE']}'. Output: TICKER|EVENT|SCORE (-1.0 to 1.0). If no specific ticker, use MARKET."
+                            response = client.chat.completions.create(
+                                model="gpt-3.5-turbo",
+                                messages=[{"role": "user", "content": prompt}],
+                                temperature=0
+                            )
+                            raw = response.choices[0].message.content.strip().split('|')
+                            if len(raw) == 3 and raw[0] != 'MARKET':
+                                ticker, event, score = raw[0].strip(), raw[1].strip(), float(raw[2])
+                                # Safe Insert using Snowpark DataFrame logic to avoid SQL injection issues
+                                session.sql(f"""
+                                    INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
+                                    SELECT '{art['PUBLISHED']}', '{art['TITLE'].replace("'", "''")}', '{art['URL']}', '{ticker}', '{event}', {score}
+                                    WHERE NOT EXISTS (SELECT 1 FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT WHERE TITLE = '{art['TITLE'].replace("'", "''")}')
+                                """).collect()
+                                new_tickers.append(ticker)
+                        except: pass
 
-                        # C. Update Prices
-                        if new_tickers:
-                            unique_tickers = list(set(new_tickers))
-                            for symbol in unique_tickers:
-                                try:
-                                    stock = yf.Ticker(symbol)
-                                    hist = stock.history(period="1d")
-                                    if not hist.empty:
-                                        info = stock.info
-                                        curr = hist['Close'].iloc[-1]
-                                        open_p = hist['Open'].iloc[-1]
-                                        chg = ((curr - open_p)/open_p)*100
-                                        pe = info.get('forwardPE', 0)
-                                        pb = info.get('priceToBook', 0)
-                                        rate = info.get('recommendationKey', 'none')
-                                        
-                                        session.sql(f"""
-                                            MERGE INTO FINANCE_DB.RAW_DATA.MARKET_PRICES AS target
-                                            USING (SELECT '{symbol}' AS T, {curr} AS C, {chg} AS P, {pe} AS PE, {pb} AS PB, '{rate}' AS R) AS source
-                                            ON target.TICKER = source.T
-                                            WHEN MATCHED THEN UPDATE SET CURRENT_PRICE = source.C, CHANGE_PERCENT = source.P, PE_RATIO = source.PE, PRICE_TO_BOOK = source.PB, ANALYST_RATING = source.R
-                                            WHEN NOT MATCHED THEN INSERT (TICKER, CURRENT_PRICE, CHANGE_PERCENT, PE_RATIO, PRICE_TO_BOOK, ANALYST_RATING) VALUES (source.T, source.C, source.P, source.PE, source.PB, source.R)
-                                        """).collect()
-                                except: pass
-                                
-                        st.toast("✅ Live Data Sync Complete!", icon="🚀")
-                        time.sleep(2)
-                        st.rerun()
+                    # C. Update Prices
+                    if new_tickers:
+                        unique_tickers = list(set(new_tickers))
+                        for symbol in unique_tickers:
+                            try:
+                                stock = yf.Ticker(symbol)
+                                hist = stock.history(period="1d")
+                                if not hist.empty:
+                                    info = stock.info
+                                    curr = hist['Close'].iloc[-1]
+                                    open_p = hist['Open'].iloc[-1]
+                                    chg = ((curr - open_p)/open_p)*100
+                                    pe = info.get('forwardPE', 0)
+                                    pb = info.get('priceToBook', 0)
+                                    rate = info.get('recommendationKey', 'none')
+                                    
+                                    session.sql(f"""
+                                        MERGE INTO FINANCE_DB.RAW_DATA.MARKET_PRICES AS target
+                                        USING (SELECT '{symbol}' AS T, {curr} AS C, {chg} AS P, {pe} AS PE, {pb} AS PB, '{rate}' AS R) AS source
+                                        ON target.TICKER = source.T
+                                        WHEN MATCHED THEN UPDATE SET CURRENT_PRICE = source.C, CHANGE_PERCENT = source.P, PE_RATIO = source.PE, PRICE_TO_BOOK = source.PB, ANALYST_RATING = source.R
+                                        WHEN NOT MATCHED THEN INSERT (TICKER, CURRENT_PRICE, CHANGE_PERCENT, PE_RATIO, PRICE_TO_BOOK, ANALYST_RATING) VALUES (source.T, source.C, source.P, source.PE, source.PB, source.R)
+                                    """).collect()
+                            except: pass
+                            
+                    st.toast("✅ Live Data Sync Complete!", icon="🚀")
+                    time.sleep(2)
+                    st.rerun()
         except Exception as e:
-            # Silently fail on local or if permissions issues, just show cached data
             print(f"Sync skipped: {e}")
 
 # TRIGGER LIVE UPDATE
@@ -133,8 +143,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-session = get_active_session()
-
 # 2. LOAD DATA
 query = """
 SELECT 
@@ -149,7 +157,7 @@ ORDER BY n.PUBLISH_DATE DESC
 try:
     df = session.sql(query).to_pandas()
 except:
-    df = pd.DataFrame() # Handle empty DB case gracefully
+    df = pd.DataFrame()
 
 if not df.empty:
     df = df.drop_duplicates(subset=['TITLE', 'TICKER'])
