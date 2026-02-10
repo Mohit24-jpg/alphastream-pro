@@ -6,4 +6,5 @@ numpy
 openai
 feedparser
 yfinance
+
 snowflake-connector-python
