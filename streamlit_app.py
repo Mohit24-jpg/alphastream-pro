@@ -100,78 +100,101 @@ def update_market_data():
             except Exception as e:
                 st.warning(f"Sync issue (minor): {e}")
 
-# --- PROFESSIONAL CSS & MOBILE FIX ---
+# --- 4. UNIFIED DESIGN SYSTEM (CSS) ---
 st.markdown("""
 <style>
-    /* 1. FORCE LIGHT MODE & GLOBAL FONT FIX */
-    :root { color-scheme: light only; }
-    .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; color: #172b4d; }
-    h1 { color: #172b4d; font-weight: 800; margin-bottom: 0px; }
-    h2, h3, p, div, label, span { color: #172b4d !important; } 
+    /* --- 1. GLOBAL TYPOGRAPHY & COLORS --- */
+    :root { color-scheme: light only; } /* Force Light Mode on Mobile */
     
-    /* 2. TAB HIGHLIGHTING RESTORED (THE "BLUE TABS") */
+    .stApp { 
+        background-color: #f4f5f7; 
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        color: #172b4d; 
+    }
+    
+    h1 { 
+        color: #172b4d; 
+        font-weight: 700; 
+        font-size: 2.2rem; 
+        letter-spacing: -0.5px;
+        margin-bottom: 0.2rem;
+    }
+    
+    h2, h3 { 
+        color: #172b4d; 
+        font-weight: 600; 
+    }
+    
+    p, li, label, span, div { 
+        color: #42526e; 
+    }
+
+    /* --- 2. UNIFIED CARD SYSTEM --- */
+    /* All containers (Charts, Dataframes, Text Blocks) share this style */
+    div.css-1r6slb0, div.stDataFrame, div.stPlotlyChart, .unified-card {
+        background-color: white; 
+        padding: 20px; 
+        border-radius: 8px; 
+        border: 1px solid #dfe1e6; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    /* Metrics look like cards too */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff; 
+        padding: 16px; 
+        border-radius: 8px; 
+        border: 1px solid #dfe1e6; 
+        border-left: 4px solid #0052cc;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* --- 3. NAVIGATION TABS (THE "BLUE TABS") --- */
     button[data-baseweb="tab"] {
-        background-color: white !important;
-        border: 1px solid #e1e4e8 !important;
+        background-color: transparent !important;
+        border: none !important;
         color: #5e6c84 !important;
-        border-radius: 4px;
-        margin-right: 8px;
+        font-weight: 600;
+        padding: 10px 20px;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        background-color: #e3f2fd !important;
-        border: 1px solid #0052cc !important;
         color: #0052cc !important;
-        font-weight: bold;
         border-bottom: 3px solid #0052cc !important;
     }
 
-    /* 3. DROPDOWN VISIBILITY FIX */
-    .stMultiSelect { z-index: 999; }
-    div[data-baseweb="select"] > div {
-        background-color: white !important;
-        color: black !important;
-        border-color: #e1e4e8 !important;
-    }
-
-    /* 4. HIDE CLUTTER */
-    #MainMenu {visibility: hidden;} 
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* 5. DESKTOP CARDS & CHART CENTERING */
-    div.css-1r6slb0, div.stDataFrame, div.stPlotlyChart {
-        background-color: white; padding: 24px; border-radius: 8px; border: 1px solid #e1e4e8; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        display: flex; justify-content: center; /* Center charts */
-        align-items: center;
-    }
-    div[data-testid="stMetric"] {
-        background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e1e4e8; border-left: 4px solid #0052cc;
+    /* --- 4. UTILITY CLASSES --- */
+    .source-badge {
+        background-color: #deebff; 
+        color: #0747a6; 
+        padding: 2px 8px; 
+        border-radius: 3px; 
+        font-size: 0.75rem; 
+        font-weight: 600; 
+        text-transform: uppercase;
+        display: inline-block; 
+        margin-bottom: 8px;
     }
     
-    /* 6. GUIDE CARDS */
-    .guide-card {
-        background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
-        border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
-    }
-    .source-badge {
-        background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; 
-        font-size: 0.8rem; font-weight: 600; display: inline-block; margin-bottom: 10px;
+    .info-box {
+        background-color: #fff;
+        border: 1px solid #dfe1e6;
+        border-left: 4px solid #0052cc;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
     }
 
-    /* === AGGRESSIVE MOBILE OPTIMIZATION (Screens < 768px) === */
+    /* --- 5. CLEANUP & MOBILE --- */
+    #MainMenu {visibility: hidden;} 
+    footer {visibility: hidden;} 
+    header {visibility: hidden;}
+    
+    /* Mobile Overrides */
     @media (max-width: 768px) {
-        .block-container {
-            padding-top: 1rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important;
-        }
-        [data-testid="column"] {
-            width: 100% !important; min-width: 100% !important; margin-bottom: 10px !important; flex: 1 1 auto !important;
-        }
+        .block-container { padding-top: 1rem !important; }
+        [data-testid="column"] { width: 100% !important; margin-bottom: 1rem; }
         h1 { font-size: 1.6rem !important; }
-        .stButton button { width: 100%; }
-        
-        /* Fix Chart Sizing on Mobile */
-        .js-plotly-plot { width: 100% !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -204,25 +227,26 @@ if not df.empty:
 else:
     last_update = "Waiting for Data..."
 
-# --- HEADER & EXECUTIVE SUMMARY ---
+# --- HEADER SECTION ---
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
-    st.markdown("<div style='margin-top: -5px; margin-bottom: 10px; font-size: 1.0rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size: 1rem; color: #5e6c84; margin-bottom: 12px;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
+    
+    # UNIFIED EXECUTIVE SUMMARY (Replaces the "Rocket" emoji box)
     st.markdown("""
-    <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e1e4e8; font-size: 0.9rem; margin-bottom: 15px;">
-        <b>🚀 Executive Summary:</b> This dashboard uses Artificial Intelligence to read thousands of news articles in real-time and compare them against Wall Street data.
-        <ul style="margin-bottom: 0;">
-            <li><b>Net Sentiment Score:</b> The aggregate "Mood" of the market (-1.0 Panic to +1.0 Euphoria).</li>
-            <li><b>Divergence:</b> When AI (News) disagrees with Analysts (Banks). This indicates a potential breakout.</li>
-        </ul>
+    <div class="info-box">
+        <div style="font-weight: 700; color: #172b4d; margin-bottom: 8px;">EXECUTIVE SUMMARY</div>
+        AlphaStream Pro utilizes real-time NLP to process global financial news and quantify market sentiment. 
+        It identifies <b>Divergence Events</b>—moments where AI-detected sentiment contradicts Wall Street consensus—highlighting potential alpha opportunities.
     </div>
     """, unsafe_allow_html=True)
+
 with c2:
     if st.button("Refresh Data", type="primary"): 
         update_market_data()
         st.rerun()
-    st.markdown(f"<div style='text-align: right; color: #5e6c84; font-size: 0.75rem; margin-top: 5px;'>Last Sync: <b>{last_update}</b></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: right; color: #6b778c; font-size: 0.75rem; margin-top: 8px;'>Last Sync: {last_update}</div>", unsafe_allow_html=True)
 
 st.divider()
 
@@ -234,7 +258,7 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS (SMART LOGIC) ---
+# --- KPI CARDS ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles", len(display_df))
 with k2: 
@@ -254,7 +278,7 @@ with k3:
         else: st.metric("Top Mover", "-", "0%")
     else:
         avg_pe = display_df['PE_RATIO'].mean() if not display_df.empty else 0
-        st.metric("Avg P/E Ratio", f"{avg_pe:.1f}x" if not pd.isna(avg_pe) else "N/A")
+        st.metric("Avg P/E Ratio (Group)", f"{avg_pe:.1f}x" if not pd.isna(avg_pe) else "N/A")
 
 with k4: st.metric("Pipeline Status", "Active", delta="Live", delta_color="off")
 
@@ -263,15 +287,6 @@ tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"]
 
 # === TAB 1: MARKET PULSE ===
 with tab1:
-    st.markdown("""
-    <div class="guide-card">
-        <div class="guide-title">Market Pulse: Sentiment & Themes</div>
-        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. 
-        <br>(<span style='color:#4CAF50'><b>Green</b></span> = Bullish, <span style='color:#E0E0E0'><b>Grey</b></span> = Neutral, <span style='color:#FF5252'><b>Red</b></span> = Bearish).
-        <br>• <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds.
-    </div>
-    """, unsafe_allow_html=True)
-
     c_left, c_right = st.columns(2)
     with c_left:
         st.subheader("Sentiment Distribution")
@@ -301,8 +316,17 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
+            # --- IMPROVED NARRATIVE DEFINITIONS ---
             with st.expander("Drill Down: Inspect Themes & Definitions"):
-                st.markdown("**Narrative Bucket Definitions:**<br>* **Macro:** Fed policy, Rates, Inflation.<br>* **Earnings:** Quarterly reports, Revenue.<br>* **Mergers:** M&A activity, Buyouts.", unsafe_allow_html=True)
+                st.markdown("""
+                **Theme Definitions:**
+                * **Macro:** Central Bank Policy, Interest Rates, Inflation Data, Sovereign Debt.
+                * **Earnings:** Quarterly Financial Results, Forward Guidance, Revenue Beats/Misses.
+                * **Mergers:** M&A Activity, Hostile Takeovers, Strategic Spinoffs.
+                * **Regulation:** Antitrust Lawsuits, Government Policy Changes, Compliance Issues.
+                * **Product:** New Product Launches, R&D Breakthroughs, Patent Approvals.
+                * **Personnel:** C-Suite Transitions, Layoffs, Board Restructuring.
+                """)
                 options = theme_counts['Theme'].tolist()
                 theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
                 if theme:
@@ -329,17 +353,16 @@ with tab1:
             with m3: st.metric("Net Impact (Divergence)", f"{delta:.2f}", delta=f"{delta:.2f}")
             st.dataframe(subset_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], use_container_width=True, hide_index=True)
         else:
-            st.info("👆 Select articles above to see their specific contribution to the score.")
+            st.info("Select articles above to see their specific contribution to the score.")
             st.dataframe(display_df.sort_values('Impact Factor', ascending=False).head(10)[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], use_container_width=True, hide_index=True,
                 column_config={"SENTIMENT_SCORE": st.column_config.ProgressColumn("Sentiment Strength", min_value=-1, max_value=1, format="%.2f"), "URL": st.column_config.LinkColumn("Evidence", display_text="Read Source"), "TITLE": "Top Headlines"})
 
 # === TAB 2: ALPHA HUNTER ===
 with tab2:
     st.markdown("""
-    <div class="guide-card">
-        <div class="guide-title">Alpha Hunter: Arbitrage Identification</div>
-        • <b>Strategy:</b> Identify arbitrage by correlating Fundamental News (X-Axis) with Technical Price (Y-Axis).<br>
-        • <b>Opportunity Zone:</b> Assets with High Sentiment (>0.5) but Lagging Price (<1%). These represent potential value disconnects.
+    <div class="info-box">
+        <b>Strategy:</b> Identify arbitrage by correlating Fundamental News (X-Axis) with Technical Price (Y-Axis).<br>
+        <b>Opportunity Zone:</b> Assets with High Sentiment (>0.5) but Lagging Price (<1%). These represent potential value disconnects.
     </div>
     """, unsafe_allow_html=True)
 
@@ -360,7 +383,7 @@ with tab2:
         fig_scatter.add_hline(y=0, line_dash="solid", line_color="#e1e4e8", line_width=1)
         fig_scatter.add_vline(x=0, line_dash="solid", line_color="#e1e4e8", line_width=1)
         fig_scatter.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='White')))
-        fig_scatter.update_layout(height=500, xaxis_title="AlphaStream Sentiment Score", yaxis_title="Intraday Price Change (%)", margin=dict(l=20, r=20, t=20, b=20))
+        fig_scatter.update_layout(height=500, xaxis_title="AlphaStream Sentiment Score", yaxis_title="Intraday Price Change (%)", margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig_scatter, use_container_width=True)
         
         st.dataframe(plot_df[['TICKER', 'CHANGE_PERCENT', 'SENTIMENT_SCORE', 'PE_RATIO']].sort_values(by='SENTIMENT_SCORE', ascending=False), use_container_width=True, hide_index=True,
@@ -369,13 +392,31 @@ with tab2:
 # === TAB 3: CREDIBILITY CHECK ===
 with tab3:
     st.markdown("""
-    <div class="guide-card">
-        <div class="guide-title">The Divergence Engine: AI vs. Wall St.</div>
-        • <b>The Opinion Gap:</b> Visualizes the difference between Real-Time News (AI) and Historical Models (Analysts).<br>
-        • <b>How to Read:</b> Large gaps indicate high-volatility events where the AI may be detecting news before analysts have updated their ratings.
+    <div class="info-box">
+        <b>The Opinion Gap:</b> Visualizes the difference between Real-Time News (AI) and Historical Models (Analysts). Large gaps indicate high-volatility events where the AI may be detecting news before analysts have updated their ratings.
     </div>
     """, unsafe_allow_html=True)
     
+    c_m1, c_m2 = st.columns(2)
+    with c_m1:
+        st.markdown("""
+        <div class="unified-card" style="height: 100%;">
+            <div style="font-weight: 700; color: #0052cc; margin-bottom: 5px;">ALPHA STREAM SENTIMENT</div>
+            <b>Source:</b> Real-time NLP analysis of Global RSS Feeds.<br>
+            <b>Method:</b> GPT-3.5 scores headlines (-1 to +1).<br>
+            <b>Edge:</b> Reacts in <i>seconds</i>.
+        </div>
+        """, unsafe_allow_html=True)
+    with c_m2:
+        st.markdown("""
+        <div class="unified-card" style="height: 100%;">
+            <div style="font-weight: 700; color: #5e6c84; margin-bottom: 5px;">ANALYST CONSENSUS</div>
+            <b>Source:</b> Major Bank Ratings (Buy/Hold/Sell).<br>
+            <b>Method:</b> Discounted Cash Flow (DCF) models.<br>
+            <b>Edge:</b> Reacts in <i>weeks</i>.
+        </div>
+        """, unsafe_allow_html=True)
+
     if not display_df.empty:
         comp_df = display_df.groupby('TICKER')[['SENTIMENT_SCORE', 'ANALYST_RATING', 'PE_RATIO', 'PRICE_TO_BOOK', 'URL', 'TITLE']].agg(
             {'SENTIMENT_SCORE': 'mean', 'ANALYST_RATING': 'first', 'PE_RATIO': 'max', 'PRICE_TO_BOOK': 'max', 'URL': 'first', 'TITLE': 'first'}
@@ -398,7 +439,7 @@ with tab3:
         melted_df['Source'] = melted_df['Source'].replace({'SENTIMENT_SCORE': 'AI Sentiment', 'Wall_St_Score': 'Analyst Consensus'})
 
         fig_side = px.bar(melted_df, x="TICKER", y="Score", color="Source", barmode='group', color_discrete_map={'AI Sentiment': '#0052cc', 'Analyst Consensus': '#97a0af'}, title="Top 15 Sentiment Divergences (Ranked by Gap)", template="plotly_white", range_y=[-1, 1])
-        fig_side.update_layout(legend_title_text='', margin=dict(l=20, r=20, t=40, b=20))
+        fig_side.update_layout(legend_title_text='', margin=dict(l=10, r=10, t=40, b=10))
         st.plotly_chart(fig_side, use_container_width=True)
 
         st.markdown("### Fundamental Inspection (All Tickers)")
