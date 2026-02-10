@@ -13,7 +13,7 @@ import yfinance as yf
 # 1. PAGE CONFIG
 st.set_page_config(layout="wide", page_title="AlphaStream Pro", page_icon="📈")
 
-# --- 2. ROBUST SESSION HANDLER (Critical for Cloud) ---
+# --- 2. ROBUST SESSION HANDLER ---
 def create_snowpark_session():
     if "connections" in st.secrets and "snowflake" in st.secrets["connections"]:
         return Session.builder.configs(st.secrets["connections"]["snowflake"]).create()
@@ -26,7 +26,7 @@ except Exception as e:
     st.error(f"Could not connect to Snowflake: {e}")
     st.stop()
 
-# --- 3. THE ENGINE (Hidden in the background) ---
+# --- 3. THE ENGINE ---
 def update_market_data():
     if "openai" in st.secrets:
         with st.spinner('⚡ AlphaStream Agent is syncing live market intelligence...'):
@@ -100,84 +100,38 @@ def update_market_data():
             except Exception as e:
                 st.warning(f"Sync issue (minor): {e}")
 
-# --- PROFESSIONAL CSS OVERRIDES ---
+# --- PROFESSIONAL CSS ---
 st.markdown("""
 <style>
     .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; }
     
-    /* 1. SHARPER TABS */
     div[data-baseweb="tab-list"] { gap: 8px; }
     button[data-baseweb="tab"] {
-        background-color: #ffffff;
-        border: 1px solid #e1e4e8;
-        border-radius: 4px;
-        color: #5e6c84;
-        font-size: 0.9rem;
-        font-weight: 600;
-        padding: 8px 16px;
+        background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 4px;
+        color: #5e6c84; font-size: 0.9rem; font-weight: 600; padding: 8px 16px;
     }
     button[data-baseweb="tab"][aria-selected="true"] {
-        background-color: #e3f2fd;
-        border: 1px solid #0052cc;
-        color: #0052cc;
-        border-bottom: 3px solid #0052cc;
+        background-color: #e3f2fd; border: 1px solid #0052cc; color: #0052cc; border-bottom: 3px solid #0052cc;
     }
-    
-    /* 2. GUIDE CARDS */
     .guide-card {
-        background-color: #ebf3fc; 
-        padding: 12px 18px; 
-        border-radius: 6px; 
-        border-left: 4px solid #0052cc; 
-        margin-bottom: 20px; 
-        color: #172b4d;
-        font-size: 0.85rem; 
-        line-height: 1.4;
+        background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
+        border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
     }
-    .guide-title {
-        font-weight: 700; 
-        font-size: 0.9rem; 
-        margin-bottom: 4px;
-        color: #0052cc; 
-        text-transform: uppercase; 
-        letter-spacing: 0.5px;
-    }
-    
-    /* 3. METHODOLOGY CARDS */
     .methodology-card {
-        background-color: #ffffff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        border: 1px solid #e1e4e8; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        height: 100%;
+        background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04); height: 100%;
     }
-    
-    /* Clean Cards */
     div.css-1r6slb0, div.stDataFrame, div.stPlotlyChart {
-        background-color: white; 
-        padding: 24px; 
-        border-radius: 8px; 
-        border: 1px solid #e1e4e8;
+        background-color: white; padding: 24px; border-radius: 8px; border: 1px solid #e1e4e8; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
-    
-    /* Metrics */
     div[data-testid="stMetric"] {
-        background-color: #ffffff; 
-        padding: 16px; 
-        border-radius: 8px; 
-        border: 1px solid #e1e4e8;
-        border-left: 4px solid #0052cc;
+        background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e1e4e8; border-left: 4px solid #0052cc;
     }
-
-    /* Source Badge */
     .source-badge {
-        background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px;
-        border-radius: 4px; font-size: 0.8rem; font-weight: 600;
-        display: inline-block; margin-bottom: 10px;
+        background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; 
+        font-size: 0.8rem; font-weight: 600; display: inline-block; margin-bottom: 10px;
     }
-
     h1, h2, h3 { color: #172b4d; font-weight: 700; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;}
 </style>
@@ -201,7 +155,6 @@ except:
 
 if not df.empty:
     df = df.drop_duplicates(subset=['TITLE', 'TICKER'])
-    # Clean Ratios (0 -> NaN)
     for col in ['PE_RATIO', 'PRICE_TO_BOOK']:
         df[col] = df[col].replace(0, np.nan)
     df['ANALYST_RATING'] = df['ANALYST_RATING'].fillna("N/A")
@@ -216,11 +169,11 @@ else:
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
+    st.caption("Built by Mohit")  # <--- YOUR NAME IS HERE
     st.markdown("""
     **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
     """, unsafe_allow_html=True)
 with c2:
-    # THE MAGIC: When you click "Refresh", it runs the UPDATE first, then reloads!
     if st.button("Refresh Data", type="primary"): 
         update_market_data()
         st.rerun()
@@ -236,33 +189,44 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS ---
+# --- KPI CARDS (SMART LOGIC) ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
     sent = display_df['SENTIMENT_SCORE'].mean() if not display_df.empty else 0
     st.metric("Net Sentiment Score", f"{sent:.2f}", delta=f"{sent:.2f}")
 with k3:
-    if not selected_tickers:
+    # --- LOGIC SWITCH: IF 1 TICKER SELECTED, SHOW PRICE. IF MANY, SHOW P/E ---
+    if len(selected_tickers) == 1:
+        # Show specific price for the selected ticker
+        single_ticker = selected_tickers[0]
+        ticker_data = df[df['TICKER'] == single_ticker].iloc[0]
+        price = ticker_data['CURRENT_PRICE'] if pd.notna(ticker_data['CURRENT_PRICE']) else 0
+        change = ticker_data['CHANGE_PERCENT'] if pd.notna(ticker_data['CHANGE_PERCENT']) else 0
+        st.metric(f"{single_ticker} Price", f"${price:.2f}", f"{change:.2f}%")
+    elif not selected_tickers:
+        # No filter: Show top mover
         top = df.loc[df['CHANGE_PERCENT'].idxmax()] if not df.empty and 'CHANGE_PERCENT' in df.columns else None
         if top is not None:
             st.metric("Top Mover (Intraday)", f"{top['TICKER']} (${top['CURRENT_PRICE']:.2f})", f"{top['CHANGE_PERCENT']:.2f}%")
         else: st.metric("Top Mover", "-", "0%")
     else:
+        # Multiple filters: Show group average
         avg_pe = display_df['PE_RATIO'].mean() if not display_df.empty else 0
         st.metric("Avg P/E Ratio (Group)", f"{avg_pe:.1f}x" if not pd.isna(avg_pe) else "N/A")
+
 with k4: st.metric("Pipeline Status", "Active", delta="Live", delta_color="off")
 
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"])
 
-# === TAB 1: MARKET PULSE ===
+# === TAB 1: MARKET PULSE (WITH FORENSIC ANALYSIS) ===
 with tab1:
     st.markdown("""
     <div class="guide-card">
         <div class="guide-title">Market Pulse: Sentiment & Themes</div>
-        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. (Green = Bullish, Red = Bearish).<br>
-        • <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds (Bloomberg, Yahoo, Reuters). If a stock isn't in the news, it won't appear here.
+        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market.<br>
+        • <b>Forensic Analysis:</b> See exactly which articles are driving the score up or down.
     </div>
     """, unsafe_allow_html=True)
 
@@ -277,11 +241,27 @@ with tab1:
             fig_hist.update_layout(height=350, bargap=0.1, showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
             
-            with st.expander("Drill Down: Inspect Sentiment Drivers"):
-                bucket = st.selectbox("Select Score Range:", options=sorted(display_df['Score Range'].unique()))
-                subset = display_df[display_df['Score Range'] == bucket][['TICKER', 'TITLE', 'URL']]
-                st.dataframe(subset, hide_index=True, use_container_width=True,
-                    column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
+            # --- SLIDER RESTORED (WITH CRASH PROTECTION) ---
+            with st.expander("Drill Down: Filter by Sentiment Range"):
+                min_s, max_s = float(display_df['SENTIMENT_SCORE'].min()), float(display_df['SENTIMENT_SCORE'].max())
+                # Crash Protection: If min == max, create a fake buffer
+                if min_s == max_s:
+                    min_s -= 0.01
+                    max_s += 0.01
+                
+                # The Slider
+                values = st.slider("Select Sentiment Range", min_s, max_s, (min_s, max_s))
+                
+                # Filter Table
+                subset = display_df[(display_df['SENTIMENT_SCORE'] >= values[0]) & (display_df['SENTIMENT_SCORE'] <= values[1])]
+                st.dataframe(
+                    subset[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], 
+                    hide_index=True, use_container_width=True,
+                    column_config={
+                        "URL": st.column_config.LinkColumn("Source", display_text="Read"),
+                        "SENTIMENT_SCORE": st.column_config.ProgressColumn("Score", min_value=-1, max_value=1, format="%.2f")
+                    }
+                )
 
     with c_right:
         st.subheader("Dominant Narratives")
@@ -292,14 +272,25 @@ with tab1:
             fig_donut.update_layout(height=350, showlegend=False)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
-            
-            with st.expander("Drill Down: Inspect Themes"):
-                options = theme_counts['Theme'].tolist()
-                theme = st.selectbox("Select Theme:", options=options) if options else None
-                if theme:
-                    subset = display_df[display_df['EVENT_TYPE'] == theme][['TICKER', 'TITLE', 'URL']]
-                    st.dataframe(subset, hide_index=True, use_container_width=True,
-                        column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
+
+    # --- FORENSIC ANALYSIS SECTION (NEW) ---
+    st.subheader("🕵️ Forensic Sentiment Analysis")
+    st.markdown("This tool calculates the **Weight** of every article to show you exactly what is moving the needle.")
+    
+    if not display_df.empty:
+        # Calculate Weight: How far is this score from Neutral (0)?
+        display_df['Impact Factor'] = display_df['SENTIMENT_SCORE'].abs()
+        impact_df = display_df.sort_values('Impact Factor', ascending=False).head(10)
+        
+        st.dataframe(
+            impact_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
+            use_container_width=True, hide_index=True,
+            column_config={
+                "SENTIMENT_SCORE": st.column_config.ProgressColumn("Sentiment Strength", min_value=-1, max_value=1, format="%.2f"),
+                "URL": st.column_config.LinkColumn("Evidence", display_text="Read Source"),
+                "TITLE": "Headline Driver"
+            }
+        )
 
 # === TAB 2: ALPHA HUNTER ===
 with tab2:
@@ -333,7 +324,6 @@ with tab2:
         )
         fig_scatter.add_hline(y=0, line_dash="solid", line_color="#e1e4e8", line_width=1)
         fig_scatter.add_vline(x=0, line_dash="solid", line_color="#e1e4e8", line_width=1)
-        fig_scatter.add_shape(type="rect", x0=0, y0=-10, x1=1, y1=0, fillcolor="rgba(0, 82, 204, 0.05)", layer="below", line_width=0)
         
         fig_scatter.update_traces(textposition='top center', marker=dict(size=12, line=dict(width=1, color='White')))
         fig_scatter.update_layout(height=500, xaxis_title="AlphaStream Sentiment Score", yaxis_title="Intraday Price Change (%)")
@@ -425,26 +415,18 @@ with tab3:
 # --- GLOSSARY FOOTER ---
 with st.expander("System Glossary: Financial Metrics Explained"):
     st.markdown("""
-    ### Valuation Ratios (Is the stock cheap or expensive?)
+    ### Valuation Ratios
     
-    * **P/E Ratio (Price-to-Earnings): The Price Tag on Profit**
-        * This measures how much you are paying for every \$1 of profit the company makes.
-        * **The Analogy:** If you buy a local business for \$100 and it makes \$10/year in profit, the P/E is 10x.
-        * **High (>30x):** "Growth Mode." Investors are paying a premium price today because they expect massive profits tomorrow (e.g., AI or Tech stocks).
-        * **Low (<15x):** "Value Mode." The stock is effectively "on sale," often because the industry is older or currently unloved (e.g., Banks or Energy).
+    * **P/E Ratio (Price-to-Earnings):**
+        * Measures how much you pay for $1 of profit.
+        * **High (>30x):** Growth Expectation.
+        * **Low (<15x):** Value / Undervalued.
 
-    * **P/B Ratio (Price-to-Book): The Asset Test**
-        * This compares the share price to the actual "Net Worth" of the company's hard assets (cash, factories, inventory).
-        * **The Analogy:** If a company went bankrupt, sold all its factories, and paid off all debts, the Book Value is what would be left.
-        * **< 1.0x:** "Deep Value." You are theoretically paying 80 cents to buy \$1.00 worth of hard assets. This is a rare signal that a stock is undervalued.
+    * **P/B Ratio (Price-to-Book):**
+        * Compares price to "Net Worth" (hard assets).
+        * **< 1.0x:** Deep Value (Trading below liquidation value).
     
     ### AI Intelligence
-    * **Sentiment Score:** The Real-Time Market Mood
-        * **+1.0:** Maximum Optimism (Breaking good news).
-        * **-1.0:** Maximum Pessimism (Crisis or panic).
-        * **0.0:** Neutral (No significant news drivers).
-    
-    * **Divergence:** The Opportunity Gap
-        * This metric calculates the difference between our Real-Time AI Score and the slow-moving Wall Street Consensus.
-        * **Interpretation:** A large gap means the AI has detected breaking news that analysts have not yet factored into their quarterly ratings. This discrepancy represents potential alpha.
+    * **Sentiment Score:** -1 (Panic) to +1 (Euphorhia).
+    * **Divergence:** The gap between AI News Sentiment and Analyst Ratings. High divergence = Potential Alpha.
     """)
