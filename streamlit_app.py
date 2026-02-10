@@ -13,6 +13,42 @@ import yfinance as yf
 # 1. PAGE CONFIG
 st.set_page_config(layout="wide", page_title="AlphaStream Pro", page_icon="📈")
 
+# --- MOBILE OPTIMIZATION & CLEANUP CSS ---
+st.markdown("""
+<style>
+    /* 1. Remove the massive white space at the top */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* 2. Hide Streamlit default clutter */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* 3. MOBILE-ONLY TWEAKS (Screens < 600px) */
+    @media (max-width: 600px) {
+        /* Force columns to stack vertically on mobile */
+        [data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 auto !important;
+            min-width: 100% !important;
+        }
+        
+        /* Fix Fonts */
+        h1 { font-size: 1.8rem !important; }
+        div[data-testid="stMetricValue"] { font-size: 1.2rem !important; }
+        div[data-testid="stMetricLabel"] { font-size: 0.9rem !important; }
+        
+        /* Make buttons full width/touch-friendly */
+        .stButton button {
+            width: 100%;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- 2. ROBUST SESSION HANDLER ---
 def create_snowpark_session():
     if "connections" in st.secrets and "snowflake" in st.secrets["connections"]:
@@ -100,7 +136,7 @@ def update_market_data():
             except Exception as e:
                 st.warning(f"Sync issue (minor): {e}")
 
-# --- PROFESSIONAL CSS ---
+# --- PROFESSIONAL CSS (DESKTOP) ---
 st.markdown("""
 <style>
     .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; }
@@ -134,7 +170,6 @@ st.markdown("""
     }
     h1 { color: #172b4d; font-weight: 800; margin-bottom: 0px; }
     h2, h3 { color: #172b4d; font-weight: 700; }
-    #MainMenu {visibility: hidden;} footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -190,7 +225,7 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS (SMART LOGIC) ---
+# --- KPI CARDS ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
@@ -265,7 +300,6 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
-            # --- THEME DRILL DOWN WITH DEFINITIONS ---
             with st.expander("Drill Down: Inspect Themes & Definitions"):
                 st.markdown("""
                 **Narrative Bucket Definitions:**
