@@ -8,3 +8,5 @@ feedparser
 yfinance
 
 snowflake-connector-python
+
+
