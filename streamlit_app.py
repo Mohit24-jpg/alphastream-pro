@@ -132,7 +132,8 @@ st.markdown("""
         background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; 
         font-size: 0.8rem; font-weight: 600; display: inline-block; margin-bottom: 10px;
     }
-    h1, h2, h3 { color: #172b4d; font-weight: 700; }
+    h1 { color: #172b4d; font-weight: 800; margin-bottom: 0px; }
+    h2, h3 { color: #172b4d; font-weight: 700; }
     #MainMenu {visibility: hidden;} footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
@@ -169,7 +170,8 @@ else:
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
-    st.caption("Built by Mohit Vaid")  # <--- YOUR NAME IS HERE
+    # UPDATED: Larger, bolder credit
+    st.markdown("<div style='margin-top: -10px; margin-bottom: 15px; font-size: 1.1rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
     st.markdown("""
     **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
     """, unsafe_allow_html=True)
@@ -196,22 +198,20 @@ with k2:
     sent = display_df['SENTIMENT_SCORE'].mean() if not display_df.empty else 0
     st.metric("Net Sentiment Score", f"{sent:.2f}", delta=f"{sent:.2f}")
 with k3:
-    # --- LOGIC SWITCH: IF 1 TICKER SELECTED, SHOW PRICE. IF MANY, SHOW P/E ---
+    # --- LOGIC SWITCH ---
     if len(selected_tickers) == 1:
-        # Show specific price for the selected ticker
         single_ticker = selected_tickers[0]
         ticker_data = df[df['TICKER'] == single_ticker].iloc[0]
         price = ticker_data['CURRENT_PRICE'] if pd.notna(ticker_data['CURRENT_PRICE']) else 0
         change = ticker_data['CHANGE_PERCENT'] if pd.notna(ticker_data['CHANGE_PERCENT']) else 0
-        st.metric(f"{single_ticker} Price", f"${price:.2f}", f"{change:.2f}%")
+        # UPDATED: Clearly labeled as Intraday
+        st.metric(f"{single_ticker} Price (Intraday)", f"${price:.2f}", f"{change:.2f}%")
     elif not selected_tickers:
-        # No filter: Show top mover
         top = df.loc[df['CHANGE_PERCENT'].idxmax()] if not df.empty and 'CHANGE_PERCENT' in df.columns else None
         if top is not None:
             st.metric("Top Mover (Intraday)", f"{top['TICKER']} (${top['CURRENT_PRICE']:.2f})", f"{top['CHANGE_PERCENT']:.2f}%")
         else: st.metric("Top Mover", "-", "0%")
     else:
-        # Multiple filters: Show group average
         avg_pe = display_df['PE_RATIO'].mean() if not display_df.empty else 0
         st.metric("Avg P/E Ratio (Group)", f"{avg_pe:.1f}x" if not pd.isna(avg_pe) else "N/A")
 
@@ -241,18 +241,13 @@ with tab1:
             fig_hist.update_layout(height=350, bargap=0.1, showlegend=False)
             st.plotly_chart(fig_hist, use_container_width=True)
             
-            # --- SLIDER RESTORED (WITH CRASH PROTECTION) ---
             with st.expander("Drill Down: Filter by Sentiment Range"):
                 min_s, max_s = float(display_df['SENTIMENT_SCORE'].min()), float(display_df['SENTIMENT_SCORE'].max())
-                # Crash Protection: If min == max, create a fake buffer
-                if min_s == max_s:
+                if min_s == max_s: # Crash Protection
                     min_s -= 0.01
                     max_s += 0.01
                 
-                # The Slider
                 values = st.slider("Select Sentiment Range", min_s, max_s, (min_s, max_s))
-                
-                # Filter Table
                 subset = display_df[(display_df['SENTIMENT_SCORE'] >= values[0]) & (display_df['SENTIMENT_SCORE'] <= values[1])]
                 st.dataframe(
                     subset[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], 
@@ -273,12 +268,11 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
 
-    # --- FORENSIC ANALYSIS SECTION (NEW) ---
+    # --- FORENSIC ANALYSIS SECTION ---
     st.subheader("🕵️ Forensic Sentiment Analysis")
     st.markdown("This tool calculates the **Weight** of every article to show you exactly what is moving the needle.")
     
     if not display_df.empty:
-        # Calculate Weight: How far is this score from Neutral (0)?
         display_df['Impact Factor'] = display_df['SENTIMENT_SCORE'].abs()
         impact_df = display_df.sort_values('Impact Factor', ascending=False).head(10)
         
@@ -430,4 +424,3 @@ with st.expander("System Glossary: Financial Metrics Explained"):
     * **Sentiment Score:** -1 (Panic) to +1 (Euphorhia).
     * **Divergence:** The gap between AI News Sentiment and Analyst Ratings. High divergence = Potential Alpha.
     """)
-
