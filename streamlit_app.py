@@ -315,18 +315,24 @@ with tab1:
             theme_counts = display_df['EVENT_TYPE'].value_counts().reset_index()
             theme_counts.columns = ['Theme', 'Count']
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
-            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=10, b=10), autosize=True)
+            
+            # --- FIX: ADDED TOP MARGIN FOR ZOOM BUTTONS ---
+            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=40, b=10), autosize=True)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True, config={'displayModeBar': True})
             
             with st.expander("Drill Down: Inspect Themes & Definitions"):
+                # --- FIX: EXPANDED DEFINITIONS ---
                 st.markdown("""
                 **Narrative Bucket Definitions:**
-                * **Macro:** Fed policy, Rates, Inflation.
-                * **Earnings:** Quarterly reports, Revenue.
-                * **Mergers:** M&A activity, Buyouts.
-                * **Regulation:** Lawsuits, Antitrust.
-                * **Product:** New launches, FDA.
+                * **Macro:** Central Bank Policy, Inflation, GDP Data, Sovereign Debt.
+                * **Earnings:** Quarterly Results, Guidance, Revenue & EPS Surprises.
+                * **Tech:** Artificial Intelligence (AI), Semiconductors, Cloud Computing, SaaS.
+                * **Mergers:** M&A, Spinoffs, Hostile Takeovers, Strategic Partnerships.
+                * **Regulation:** Antitrust Lawsuits, FDA Approvals, Government Policy Changes.
+                * **Crypto:** Bitcoin/Ethereum Price Action, Regulatory News, Adoption.
+                * **Personal Finance:** Consumer Credit, Mortgage Rates, Savings Trends.
+                * **Product:** New Launches, R&D Breakthroughs, Recalls.
                 """)
                 options = theme_counts['Theme'].tolist()
                 theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
