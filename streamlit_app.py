@@ -103,38 +103,55 @@ def update_market_data():
 # --- PROFESSIONAL CSS & MOBILE FIX ---
 st.markdown("""
 <style>
-    /* 1. FORCE LIGHT MODE (Fixes invisible text on iPhones) */
-    :root {
-        color-scheme: light only;
-    }
-    
-    /* 2. GLOBAL STYLES */
+    /* 1. FORCE LIGHT MODE & GLOBAL FONT FIX */
+    :root { color-scheme: light only; }
     .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; color: #172b4d; }
     h1 { color: #172b4d; font-weight: 800; margin-bottom: 0px; }
-    h2, h3 { color: #172b4d; font-weight: 700; }
-    p, div, label, span { color: #172b4d !important; } /* Force all text dark */
+    h2, h3, p, div, label, span { color: #172b4d !important; } 
     
-    /* 3. HIDE CLUTTER */
+    /* 2. TAB HIGHLIGHTING RESTORED (THE "BLUE TABS") */
+    button[data-baseweb="tab"] {
+        background-color: white !important;
+        border: 1px solid #e1e4e8 !important;
+        color: #5e6c84 !important;
+        border-radius: 4px;
+        margin-right: 8px;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background-color: #e3f2fd !important;
+        border: 1px solid #0052cc !important;
+        color: #0052cc !important;
+        font-weight: bold;
+        border-bottom: 3px solid #0052cc !important;
+    }
+
+    /* 3. DROPDOWN VISIBILITY FIX */
+    .stMultiSelect { z-index: 999; }
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+        color: black !important;
+        border-color: #e1e4e8 !important;
+    }
+
+    /* 4. HIDE CLUTTER */
     #MainMenu {visibility: hidden;} 
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* 4. DESKTOP CARDS */
+    /* 5. DESKTOP CARDS & CHART CENTERING */
     div.css-1r6slb0, div.stDataFrame, div.stPlotlyChart {
         background-color: white; padding: 24px; border-radius: 8px; border: 1px solid #e1e4e8; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        display: flex; justify-content: center; /* Center charts */
     }
     div[data-testid="stMetric"] {
         background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e1e4e8; border-left: 4px solid #0052cc;
     }
     
-    /* 5. GUIDE CARDS (From your specific request) */
+    /* 6. GUIDE CARDS */
     .guide-card {
         background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
         border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
-    }
-    .guide-title {
-        font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .methodology-card {
         background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
@@ -147,26 +164,17 @@ st.markdown("""
 
     /* === AGGRESSIVE MOBILE OPTIMIZATION (Screens < 768px) === */
     @media (max-width: 768px) {
-        /* Kill top padding */
         .block-container {
-            padding-top: 1rem !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
+            padding-top: 1rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important;
         }
-        
-        /* Stack Columns Vertically */
         [data-testid="column"] {
-            width: 100% !important;
-            min-width: 100% !important;
-            margin-bottom: 10px !important;
-            flex: 1 1 auto !important;
+            width: 100% !important; min-width: 100% !important; margin-bottom: 10px !important; flex: 1 1 auto !important;
         }
-        
-        /* Resize Fonts */
-        h1 { font-size: 1.5rem !important; }
-        
-        /* Full width buttons */
+        h1 { font-size: 1.6rem !important; }
         .stButton button { width: 100%; }
+        
+        /* Fix Chart Sizing on Mobile */
+        .js-plotly-plot { width: 100% !important; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -255,8 +263,9 @@ with tab1:
     st.markdown("""
     <div class="guide-card">
         <div class="guide-title">Market Pulse: Sentiment & Themes</div>
-        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. (Green = Bullish, Red = Bearish).<br>
-        • <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds (Bloomberg, Yahoo, Reuters). If a stock isn't in the news, it won't appear here.
+        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. 
+        <br>(<span style='color:#4CAF50'><b>Green</b></span> = Bullish, <span style='color:#E0E0E0'><b>Grey</b></span> = Neutral, <span style='color:#FF5252'><b>Red</b></span> = Bearish).
+        <br>• <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds.
     </div>
     """, unsafe_allow_html=True)
 
@@ -271,7 +280,7 @@ with tab1:
             fig_hist.update_layout(height=350, bargap=0.1, showlegend=False, margin=dict(l=20, r=20, t=20, b=20))
             st.plotly_chart(fig_hist, use_container_width=True)
             
-            with st.expander("Drill Down: Inspect Sentiment Drivers"):
+            with st.expander("Drill Down: Filter by Sentiment Range"):
                 min_s, max_s = float(display_df['SENTIMENT_SCORE'].min()), float(display_df['SENTIMENT_SCORE'].max())
                 if min_s == max_s: min_s -= 0.01; max_s += 0.01
                 values = st.slider("Select Sentiment Range", min_s, max_s, (min_s, max_s))
@@ -289,9 +298,10 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
-            with st.expander("Drill Down: Inspect Themes"):
+            with st.expander("Drill Down: Inspect Themes & Definitions"):
+                st.markdown("**Narrative Bucket Definitions:**<br>* **Macro:** Fed policy, Rates, Inflation.<br>* **Earnings:** Quarterly reports, Revenue.<br>* **Mergers:** M&A activity, Buyouts.", unsafe_allow_html=True)
                 options = theme_counts['Theme'].tolist()
-                theme = st.selectbox("Select Theme:", options=options) if options else None
+                theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
                 if theme:
                     subset = display_df[display_df['EVENT_TYPE'] == theme][['TICKER', 'TITLE', 'URL']]
                     st.dataframe(subset, hide_index=True, use_container_width=True, column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
