@@ -125,12 +125,30 @@ st.markdown("""
         border-bottom: 3px solid #0052cc !important;
     }
 
-    /* 3. DROPDOWN VISIBILITY FIX */
+    /* 3. DROPDOWN VISIBILITY FIX (POPUP MENU) */
     .stMultiSelect { z-index: 999; }
+    
+    /* Force the dropdown container (the part you click) to be white */
     div[data-baseweb="select"] > div {
         background-color: white !important;
         color: black !important;
         border-color: #e1e4e8 !important;
+    }
+    
+    /* FORCE THE POPUP LIST TO BE WHITE (Overrides Mobile Dark Mode) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+        background-color: white !important;
+    }
+    
+    /* Force the options inside the list to be dark text on white background */
+    li[role="option"] {
+        background-color: white !important;
+        color: #172b4d !important;
+    }
+    
+    /* Highlight color when you hover over an option */
+    li[role="option"]:hover, li[role="option"][aria-selected="true"] {
+        background-color: #e3f2fd !important;
     }
 
     /* 4. CLEANUP */
@@ -203,13 +221,13 @@ if not df.empty:
 else:
     last_update = "Waiting for Data..."
 
-# --- HEADER SECTION (REDESIGNED) ---
+# --- HEADER SECTION ---
 c1, c2 = st.columns([5, 2])
 with c1:
     st.title("AlphaStream Pro")
     st.markdown("<div style='margin-top: -5px; margin-bottom: 15px; font-size: 1.0rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
     
-    # CLEAN INFO BOX (No "Executive Summary" Header)
+    # CLEAN INFO BOX
     st.markdown("""
     <div style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e1e4e8; font-size: 0.95rem; margin-bottom: 15px; color: #172b4d;">
         AlphaStream Pro utilizes real-time NLP to process global financial news and quantify market sentiment. 
@@ -218,12 +236,10 @@ with c1:
     """, unsafe_allow_html=True)
 
 with c2:
-    # ALIGNMENT FIX: Vertical spacer to push button down to match title
     st.markdown("<br>", unsafe_allow_html=True) 
     if st.button("Refresh Data", type="primary"): 
         update_market_data()
         st.rerun()
-    # Larger, clearer Last Sync text aligned right
     st.markdown(f"<div style='text-align: right; color: #5e6c84; font-size: 0.85rem; margin-top: 5px; font-weight: 500;'>Last Sync: {last_update}</div>", unsafe_allow_html=True)
 
 st.divider()
@@ -283,7 +299,6 @@ with tab1:
             fig_hist = px.bar(hist_data, x="Score Range", y="Volume", color="Score Range", 
                 color_continuous_scale=["#FF5252", "#E0E0E0", "#4CAF50"], range_color=[-1, 1], template="plotly_white")
             fig_hist.update_layout(height=350, bargap=0.1, showlegend=False, margin=dict(l=10, r=10, t=10, b=10), autosize=True)
-            # CHART MODE BAR ENABLED FOR ZOOM
             st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': True})
             
             with st.expander("Drill Down: Filter by Sentiment Range"):
@@ -302,7 +317,6 @@ with tab1:
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
             fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=10, b=10), autosize=True)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
-            # CHART MODE BAR ENABLED FOR ZOOM
             st.plotly_chart(fig_donut, use_container_width=True, config={'displayModeBar': True})
             
             with st.expander("Drill Down: Inspect Themes & Definitions"):
