@@ -260,13 +260,12 @@ with tab1:
             theme_counts = display_df['EVENT_TYPE'].value_counts().reset_index()
             theme_counts.columns = ['Theme', 'Count']
             
-            # --- THE RESTORED DONUT CHART ---
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
             fig_donut.update_layout(height=350, showlegend=False)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
-            # --- THE RESTORED DRILL DOWN & NEW DEFINITIONS ---
+            # --- THEME DRILL DOWN WITH DEFINITIONS ---
             with st.expander("Drill Down: Inspect Themes & Definitions"):
                 st.markdown("""
                 **Narrative Bucket Definitions:**
@@ -445,18 +444,26 @@ with tab3:
 # --- GLOSSARY FOOTER ---
 with st.expander("System Glossary: Financial Metrics Explained"):
     st.markdown("""
-    ### Valuation Ratios
+    ### Valuation Ratios (Is the stock cheap or expensive?)
     
-    * **P/E Ratio (Price-to-Earnings):**
-        * Measures how much you pay for $1 of profit.
-        * **High (>30x):** Growth Expectation.
-        * **Low (<15x):** Value / Undervalued.
+    * **P/E Ratio (Price-to-Earnings): The Price Tag on Profit**
+        * This measures how much you are paying for every \$1 of profit the company makes.
+        * **The Analogy:** If you buy a local business for \$100 and it makes \$10/year in profit, the P/E is 10x.
+        * **High (>30x):** "Growth Mode." Investors are paying a premium price today because they expect massive profits tomorrow (e.g., AI or Tech stocks).
+        * **Low (<15x):** "Value Mode." The stock is effectively "on sale," often because the industry is older or currently unloved (e.g., Banks or Energy).
 
-    * **P/B Ratio (Price-to-Book):**
-        * Compares price to "Net Worth" (hard assets).
-        * **< 1.0x:** Deep Value (Trading below liquidation value).
+    * **P/B Ratio (Price-to-Book): The Asset Test**
+        * This compares the share price to the actual "Net Worth" of the company's hard assets (cash, factories, inventory).
+        * **The Analogy:** If a company went bankrupt, sold all its factories, and paid off all debts, the Book Value is what would be left.
+        * **< 1.0x:** "Deep Value." You are theoretically paying 80 cents to buy \$1.00 worth of hard assets. This is a rare signal that a stock is undervalued.
     
     ### AI Intelligence
-    * **Sentiment Score:** -1 (Panic) to +1 (Euphorhia).
-    * **Divergence:** The gap between AI News Sentiment and Analyst Ratings. High divergence = Potential Alpha.
+    * **Sentiment Score:** The Real-Time Market Mood
+        * **+1.0:** Maximum Optimism (Breaking good news).
+        * **-1.0:** Maximum Pessimism (Crisis or panic).
+        * **0.0:** Neutral (No significant news drivers).
+    
+    * **Divergence:** The Opportunity Gap
+        * This metric calculates the difference between our Real-Time AI Score and the slow-moving Wall Street Consensus.
+        * **Interpretation:** A large gap means the AI has detected breaking news that analysts have not yet factored into their quarterly ratings. This discrepancy represents potential alpha.
     """)
