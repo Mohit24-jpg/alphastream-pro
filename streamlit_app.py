@@ -169,7 +169,7 @@ else:
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
-    st.caption("Built by Mohit")  # <--- YOUR NAME IS HERE
+    st.caption("Built by Mohit Vaid")  # <--- YOUR NAME IS HERE
     st.markdown("""
     **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
     """, unsafe_allow_html=True)
@@ -430,3 +430,4 @@ with st.expander("System Glossary: Financial Metrics Explained"):
     * **Sentiment Score:** -1 (Panic) to +1 (Euphorhia).
     * **Divergence:** The gap between AI News Sentiment and Analyst Ratings. High divergence = Potential Alpha.
     """)
+
