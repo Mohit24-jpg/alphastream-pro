@@ -26,26 +26,36 @@ except Exception as e:
     st.error(f"Could not connect to Snowflake: {e}")
     st.stop()
 
-# --- 3. THE "LAZY LOADING" ENGINE (V4: TIMEZONE SAFE) ---
+# --- 3. THE "LAZY LOADING" ENGINE (V5: CRASH PROOF) ---
 def run_live_update():
     if "openai" in st.secrets:
         try:
-            # 1. ASK SNOWFLAKE FOR THE TIME DIFFERENCE (Solves Timezone Loop)
-            # We use DATEDIFF in SQL so the DB compares its own clock to its own data.
+            # 1. CHECK TIME DIFFERENCE
             try:
+                # Ask Snowflake: "How many minutes since the last update?"
                 freshness_query = """
                 SELECT DATEDIFF('minute', MAX(PUBLISH_DATE), CURRENT_TIMESTAMP()) 
                 FROM FINANCE_DB.RAW_DATA.NEWS_SENTIMENT
                 """
-                # If table is empty, this returns None, so we set it to 999
-                minutes_diff = session.sql(freshness_query).collect()[0][0]
-                if minutes_diff is None: minutes_diff = 999
+                result = session.sql(freshness_query).collect()
+                minutes_diff = result[0][0] if result and result[0][0] is not None else 999
             except:
                 minutes_diff = 999
             
-            # 2. If data is older than 15 minutes, trigger refresh
+            # 2. TRIGGER UPDATE
             if minutes_diff > 15:
                 with st.spinner('⚡ Detecting Stale Data... AI Agent is fetching live global news...'):
+                    
+                    # === THE FIX: INSERT HEARTBEAT FIRST ===
+                    # We mark the update as "Complete" immediately. 
+                    # If the app crashes later, it won't loop because this timestamp is now fresh.
+                    try:
+                        session.sql(f"""
+                            INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
+                            VALUES (CURRENT_TIMESTAMP(), 'System Heartbeat', 'N/A', 'SYSTEM', 'SYNC', 0.0)
+                        """).collect()
+                    except: pass # Keep going even if this fails
+
                     # A. Fetch News
                     RSS_FEEDS = [
                         "https://finance.yahoo.com/news/rssindex",
@@ -57,7 +67,6 @@ def run_live_update():
                         try:
                             d = feedparser.parse(feed)
                             for entry in d.entries[:3]: 
-                                # Use Snowflake's CURRENT_TIMESTAMP() in the INSERT to match clocks
                                 articles.append({"TITLE": entry.title, "URL": entry.link})
                         except: pass
                     
@@ -76,9 +85,7 @@ def run_live_update():
                             raw = response.choices[0].message.content.strip().split('|')
                             if len(raw) == 3 and raw[0] != 'MARKET':
                                 ticker, event, score = raw[0].strip(), raw[1].strip(), float(raw[2])
-                                
-                                # Handle TSMC -> TSM mapping (Yahoo Finance quirk)
-                                if ticker == 'TSMC': ticker = 'TSM'
+                                if ticker == 'TSMC': ticker = 'TSM' # Fix common AI error
 
                                 # Insert News
                                 session.sql(f"""
@@ -89,7 +96,7 @@ def run_live_update():
                                 new_tickers.append(ticker)
                         except: pass
 
-                    # C. Update Prices (Safe Mode)
+                    # C. Update Prices (Wrapped in broad Try/Except to ignore 404s)
                     if new_tickers:
                         unique_tickers = list(set(new_tickers))
                         for symbol in unique_tickers:
@@ -97,10 +104,12 @@ def run_live_update():
                                 stock = yf.Ticker(symbol)
                                 hist = stock.history(period="1d")
                                 if not hist.empty:
-                                    info = stock.info
                                     curr = hist['Close'].iloc[-1]
                                     open_p = hist['Open'].iloc[-1]
                                     chg = ((curr - open_p)/open_p)*100
+                                    
+                                    # Safe extraction of ratios
+                                    info = stock.info
                                     pe = info.get('forwardPE', 0)
                                     pb = info.get('priceToBook', 0)
                                     rate = info.get('recommendationKey', 'none')
@@ -112,15 +121,7 @@ def run_live_update():
                                         WHEN MATCHED THEN UPDATE SET CURRENT_PRICE = source.C, CHANGE_PERCENT = source.P, PE_RATIO = source.PE, PRICE_TO_BOOK = source.PB, ANALYST_RATING = source.R
                                         WHEN NOT MATCHED THEN INSERT (TICKER, CURRENT_PRICE, CHANGE_PERCENT, PE_RATIO, PRICE_TO_BOOK, ANALYST_RATING) VALUES (source.T, source.C, source.P, source.PE, source.PB, source.R)
                                     """).collect()
-                            except: pass
-                    
-                    # D. THE HEARTBEAT (Resets the clock!)
-                    # We insert a dummy record so MAX(PUBLISH_DATE) becomes NOW.
-                    # This ensures DATEDIFF is 0 on the next run, breaking the loop.
-                    session.sql(f"""
-                        INSERT INTO FINANCE_DB.RAW_DATA.NEWS_SENTIMENT (PUBLISH_DATE, TITLE, URL, TICKER, EVENT_TYPE, SENTIMENT_SCORE)
-                        VALUES (CURRENT_TIMESTAMP(), 'System Heartbeat', 'N/A', 'SYSTEM', 'SYNC', 0.0)
-                    """).collect()
+                            except: pass 
                             
                     st.toast("✅ Live Data Sync Complete!", icon="🚀")
                     time.sleep(2)
