@@ -29,7 +29,7 @@ except Exception as e:
 # --- 3. THE ENGINE ---
 def update_market_data():
     if "openai" in st.secrets:
-        with st.spinner('⚡ AlphaStream Agent is syncing live market intelligence...'):
+        with st.spinner('AlphaStream Agent is syncing live market intelligence...'):
             try:
                 # A. Fetch News
                 RSS_FEEDS = [
@@ -96,7 +96,7 @@ def update_market_data():
                                     WHEN NOT MATCHED THEN INSERT (TICKER, CURRENT_PRICE, CHANGE_PERCENT, PE_RATIO, PRICE_TO_BOOK, ANALYST_RATING) VALUES (source.T, source.C, source.P, source.PE, source.PB, source.R)
                                 """).collect()
                         except: pass
-                st.toast("✅ System Sync Complete", icon="🚀")
+                st.toast("System Sync Complete")
             except Exception as e:
                 st.warning(f"Sync issue (minor): {e}")
 
@@ -170,7 +170,6 @@ else:
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
-    # UPDATED: Larger, bolder credit
     st.markdown("<div style='margin-top: -10px; margin-bottom: 15px; font-size: 1.1rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
     st.markdown("""
     **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
@@ -191,20 +190,18 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS (SMART LOGIC) ---
+# --- KPI CARDS ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
     sent = display_df['SENTIMENT_SCORE'].mean() if not display_df.empty else 0
     st.metric("Net Sentiment Score", f"{sent:.2f}", delta=f"{sent:.2f}")
 with k3:
-    # --- LOGIC SWITCH ---
     if len(selected_tickers) == 1:
         single_ticker = selected_tickers[0]
         ticker_data = df[df['TICKER'] == single_ticker].iloc[0]
         price = ticker_data['CURRENT_PRICE'] if pd.notna(ticker_data['CURRENT_PRICE']) else 0
         change = ticker_data['CHANGE_PERCENT'] if pd.notna(ticker_data['CHANGE_PERCENT']) else 0
-        # UPDATED: Clearly labeled as Intraday
         st.metric(f"{single_ticker} Price (Intraday)", f"${price:.2f}", f"{change:.2f}%")
     elif not selected_tickers:
         top = df.loc[df['CHANGE_PERCENT'].idxmax()] if not df.empty and 'CHANGE_PERCENT' in df.columns else None
@@ -220,7 +217,7 @@ with k4: st.metric("Pipeline Status", "Active", delta="Live", delta_color="off")
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"])
 
-# === TAB 1: MARKET PULSE (WITH FORENSIC ANALYSIS) ===
+# === TAB 1: MARKET PULSE ===
 with tab1:
     st.markdown("""
     <div class="guide-card">
@@ -243,9 +240,7 @@ with tab1:
             
             with st.expander("Drill Down: Filter by Sentiment Range"):
                 min_s, max_s = float(display_df['SENTIMENT_SCORE'].min()), float(display_df['SENTIMENT_SCORE'].max())
-                if min_s == max_s: # Crash Protection
-                    min_s -= 0.01
-                    max_s += 0.01
+                if min_s == max_s: min_s -= 0.01; max_s += 0.01
                 
                 values = st.slider("Select Sentiment Range", min_s, max_s, (min_s, max_s))
                 subset = display_df[(display_df['SENTIMENT_SCORE'] >= values[0]) & (display_df['SENTIMENT_SCORE'] <= values[1])]
@@ -268,13 +263,21 @@ with tab1:
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
 
-    # --- FORENSIC ANALYSIS SECTION ---
-    st.subheader("🕵️ Forensic Sentiment Analysis")
+    # --- FORENSIC ANALYSIS SECTION (INTERACTIVE) ---
+    st.subheader("Forensic Sentiment Analysis")
     st.markdown("This tool calculates the **Weight** of every article to show you exactly what is moving the needle.")
     
     if not display_df.empty:
         display_df['Impact Factor'] = display_df['SENTIMENT_SCORE'].abs()
-        impact_df = display_df.sort_values('Impact Factor', ascending=False).head(10)
+        
+        # INTERACTIVE FILTER
+        drivers = sorted(display_df['TITLE'].unique().tolist())
+        selected_drivers = st.multiselect("Isolate Specific Headlines or Drivers:", drivers)
+        
+        if selected_drivers:
+            impact_df = display_df[display_df['TITLE'].isin(selected_drivers)].sort_values('Impact Factor', ascending=False)
+        else:
+            impact_df = display_df.sort_values('Impact Factor', ascending=False).head(10)
         
         st.dataframe(
             impact_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
@@ -347,7 +350,7 @@ with tab3:
     with c_m1:
         st.markdown("""
         <div class="methodology-card">
-            <div class="guide-title">🤖 AlphaStream Sentiment</div>
+            <div class="guide-title">AlphaStream Sentiment</div>
             <b>Source:</b> Real-time NLP analysis of Global RSS Feeds (Yahoo, Reuters).<br>
             <b>Method:</b> GPT-3.5 scores every headline (-1 to +1) instantly.<br>
             <b>Edge:</b> Reacts to news in <i>seconds</i>.
@@ -356,7 +359,7 @@ with tab3:
     with c_m2:
         st.markdown("""
         <div class="methodology-card">
-            <div class="guide-title">🏢 Analyst Consensus</div>
+            <div class="guide-title">Analyst Consensus</div>
             <b>Source:</b> Aggregate Buy/Hold/Sell ratings from Major Banks.<br>
             <b>Method:</b> Fundamental Discounted Cash Flow (DCF) models.<br>
             <b>Edge:</b> Reacts to news in <i>weeks/months</i>.
