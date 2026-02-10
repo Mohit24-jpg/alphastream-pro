@@ -104,7 +104,6 @@ def update_market_data():
 st.markdown("""
 <style>
     .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; }
-    
     div[data-baseweb="tab-list"] { gap: 8px; }
     button[data-baseweb="tab"] {
         background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 4px;
@@ -116,6 +115,9 @@ st.markdown("""
     .guide-card {
         background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
         border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
+    }
+    .guide-title {
+        font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .methodology-card {
         background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
@@ -190,7 +192,7 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS (SMART LOGIC) ---
+# --- KPI CARDS ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
@@ -219,11 +221,13 @@ tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"]
 
 # === TAB 1: MARKET PULSE ===
 with tab1:
+    # --- RESTORED LEGEND EXPLANATION ---
     st.markdown("""
     <div class="guide-card">
         <div class="guide-title">Market Pulse: Sentiment & Themes</div>
-        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market.<br>
-        • <b>Forensic Analysis:</b> See exactly which articles are driving the score up or down.
+        • <b>Mood Index:</b> Visualizes the aggregate emotion of the market. 
+        <br>(<span style='color:#4CAF50'><b>Green</b></span> = Bullish, <span style='color:#E0E0E0'><b>Grey</b></span> = Neutral, <span style='color:#FF5252'><b>Red</b></span> = Bearish).
+        <br>• <b>Why these tickers?</b> This dashboard is <b>Event-Driven</b>. We only display assets currently appearing in global news feeds.
     </div>
     """, unsafe_allow_html=True)
 
@@ -262,38 +266,45 @@ with tab1:
             fig_donut.update_layout(height=350, showlegend=False)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
+            
+            # --- RESTORED THEME DRILL DOWN ---
+            with st.expander("Drill Down: Inspect Themes"):
+                options = theme_counts['Theme'].tolist()
+                theme = st.selectbox("Select Theme:", options=options) if options else None
+                if theme:
+                    subset = display_df[display_df['EVENT_TYPE'] == theme][['TICKER', 'TITLE', 'URL']]
+                    st.dataframe(subset, hide_index=True, use_container_width=True,
+                        column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
 
-    # --- FORENSIC ANALYSIS SECTION (RESTORED & IMPROVED) ---
+    # --- FORENSIC ANALYSIS SECTION (INTERACTIVE) ---
     st.subheader("Forensic Sentiment Analysis")
     st.markdown("Select specific articles to calculate their individual **Weight** vs. the Market Average.")
     
     if not display_df.empty:
-        # 1. User selects articles
+        display_df['Impact Factor'] = display_df['SENTIMENT_SCORE'].abs()
+        
+        # INTERACTIVE FILTER
         drivers = sorted(display_df['TITLE'].unique().tolist())
         selected_drivers = st.multiselect("Isolate Specific Headlines / Drivers:", drivers)
         
-        # 2. Logic: Compare Selection vs. Global
+        # Logic: Compare Selection vs. Global
         global_avg = display_df['SENTIMENT_SCORE'].mean()
         
         if selected_drivers:
-            # Filter the subset
             subset_df = display_df[display_df['TITLE'].isin(selected_drivers)]
             subset_avg = subset_df['SENTIMENT_SCORE'].mean()
             delta = subset_avg - global_avg
             
-            # 3. Show Impact Metrics
             m1, m2, m3 = st.columns(3)
             with m1: st.metric("Global Market Score", f"{global_avg:.2f}")
             with m2: st.metric("Selected Driver Score", f"{subset_avg:.2f}")
             with m3: st.metric("Net Impact (Divergence)", f"{delta:.2f}", delta=f"{delta:.2f}")
             
-            # Show the table for context
             st.dataframe(subset_df[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']], use_container_width=True, hide_index=True)
         else:
-            # Default View
             st.info("👆 Select articles above to see their specific contribution to the score.")
             st.dataframe(
-                display_df.sort_values('SENTIMENT_SCORE', ascending=False).head(10)[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
+                display_df.sort_values('Impact Factor', ascending=False).head(10)[['TICKER', 'SENTIMENT_SCORE', 'TITLE', 'URL']],
                 use_container_width=True, hide_index=True,
                 column_config={
                     "SENTIMENT_SCORE": st.column_config.ProgressColumn("Sentiment Strength", min_value=-1, max_value=1, format="%.2f"),
