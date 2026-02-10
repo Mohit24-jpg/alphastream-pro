@@ -143,6 +143,7 @@ st.markdown("""
         background-color: white; padding: 24px; border-radius: 8px; border: 1px solid #e1e4e8; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         display: flex; justify-content: center; /* Center charts */
+        align-items: center;
     }
     div[data-testid="stMetric"] {
         background-color: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e1e4e8; border-left: 4px solid #0052cc;
@@ -152,10 +153,6 @@ st.markdown("""
     .guide-card {
         background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
         border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
-    }
-    .methodology-card {
-        background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04); height: 100%;
     }
     .source-badge {
         background-color: #e3f2fd; color: #0d47a1; padding: 4px 8px; border-radius: 4px; 
@@ -207,13 +204,19 @@ if not df.empty:
 else:
     last_update = "Waiting for Data..."
 
-# --- HEADER ---
+# --- HEADER & EXECUTIVE SUMMARY ---
 c1, c2 = st.columns([6, 2])
 with c1:
     st.title("AlphaStream Pro")
     st.markdown("<div style='margin-top: -5px; margin-bottom: 10px; font-size: 1.0rem; color: #5e6c84;'>Built by <b>Mohit Vaid</b></div>", unsafe_allow_html=True)
     st.markdown("""
-    **Real-Time Institutional Sentiment & Fundamental Intelligence** <span class='source-badge'>Universe: Event-Driven (Trending News Tickers)</span>
+    <div style="background-color: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e1e4e8; font-size: 0.9rem; margin-bottom: 15px;">
+        <b>🚀 Executive Summary:</b> This dashboard uses Artificial Intelligence to read thousands of news articles in real-time and compare them against Wall Street data.
+        <ul style="margin-bottom: 0;">
+            <li><b>Net Sentiment Score:</b> The aggregate "Mood" of the market (-1.0 Panic to +1.0 Euphoria).</li>
+            <li><b>Divergence:</b> When AI (News) disagrees with Analysts (Banks). This indicates a potential breakout.</li>
+        </ul>
+    </div>
     """, unsafe_allow_html=True)
 with c2:
     if st.button("Refresh Data", type="primary"): 
@@ -277,7 +280,7 @@ with tab1:
             hist_data = display_df.groupby('Score Range').size().reset_index(name='Volume')
             fig_hist = px.bar(hist_data, x="Score Range", y="Volume", color="Score Range", 
                 color_continuous_scale=["#FF5252", "#E0E0E0", "#4CAF50"], range_color=[-1, 1], template="plotly_white")
-            fig_hist.update_layout(height=350, bargap=0.1, showlegend=False, margin=dict(l=20, r=20, t=20, b=20))
+            fig_hist.update_layout(height=350, bargap=0.1, showlegend=False, margin=dict(l=10, r=10, t=10, b=10))
             st.plotly_chart(fig_hist, use_container_width=True)
             
             with st.expander("Drill Down: Filter by Sentiment Range"):
@@ -294,7 +297,7 @@ with tab1:
             theme_counts = display_df['EVENT_TYPE'].value_counts().reset_index()
             theme_counts.columns = ['Theme', 'Count']
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
-            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=20, r=20, t=20, b=20))
+            fig_donut.update_layout(height=350, showlegend=False, margin=dict(l=10, r=10, t=10, b=10))
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
@@ -373,26 +376,6 @@ with tab3:
     </div>
     """, unsafe_allow_html=True)
     
-    c_m1, c_m2 = st.columns(2)
-    with c_m1:
-        st.markdown("""
-        <div class="methodology-card">
-            <div class="guide-title">🤖 AlphaStream Sentiment</div>
-            <b>Source:</b> Real-time NLP analysis of Global RSS Feeds (Yahoo, Reuters).<br>
-            <b>Method:</b> GPT-3.5 scores every headline (-1 to +1) instantly.<br>
-            <b>Edge:</b> Reacts to news in <i>seconds</i>.
-        </div>
-        """, unsafe_allow_html=True)
-    with c_m2:
-        st.markdown("""
-        <div class="methodology-card">
-            <div class="guide-title">🏢 Analyst Consensus</div>
-            <b>Source:</b> Aggregate Buy/Hold/Sell ratings from Major Banks.<br>
-            <b>Method:</b> Fundamental Discounted Cash Flow (DCF) models.<br>
-            <b>Edge:</b> Reacts to news in <i>weeks/months</i>.
-        </div>
-        """, unsafe_allow_html=True)
-
     if not display_df.empty:
         comp_df = display_df.groupby('TICKER')[['SENTIMENT_SCORE', 'ANALYST_RATING', 'PE_RATIO', 'PRICE_TO_BOOK', 'URL', 'TITLE']].agg(
             {'SENTIMENT_SCORE': 'mean', 'ANALYST_RATING': 'first', 'PE_RATIO': 'max', 'PRICE_TO_BOOK': 'max', 'URL': 'first', 'TITLE': 'first'}
