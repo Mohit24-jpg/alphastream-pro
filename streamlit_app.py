@@ -104,6 +104,7 @@ def update_market_data():
 st.markdown("""
 <style>
     .stApp { background-color: #f5f7f9; font-family: 'Inter', sans-serif; }
+    
     div[data-baseweb="tab-list"] { gap: 8px; }
     button[data-baseweb="tab"] {
         background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 4px;
@@ -115,9 +116,6 @@ st.markdown("""
     .guide-card {
         background-color: #ebf3fc; padding: 12px 18px; border-radius: 6px; 
         border-left: 4px solid #0052cc; margin-bottom: 20px; color: #172b4d; font-size: 0.85rem; line-height: 1.4;
-    }
-    .guide-title {
-        font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .methodology-card {
         background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e1e4e8; 
@@ -192,7 +190,7 @@ with col_search:
 
 display_df = df[df['TICKER'].isin(selected_tickers)] if selected_tickers else df
 
-# --- KPI CARDS ---
+# --- KPI CARDS (SMART LOGIC) ---
 k1, k2, k3, k4 = st.columns(4)
 with k1: st.metric("Live Articles Processed", len(display_df))
 with k2: 
@@ -221,7 +219,6 @@ tab1, tab2, tab3 = st.tabs(["Market Pulse", "Alpha Hunter", "Credibility Check"]
 
 # === TAB 1: MARKET PULSE ===
 with tab1:
-    # --- RESTORED LEGEND EXPLANATION ---
     st.markdown("""
     <div class="guide-card">
         <div class="guide-title">Market Pulse: Sentiment & Themes</div>
@@ -262,21 +259,33 @@ with tab1:
         if not display_df.empty:
             theme_counts = display_df['EVENT_TYPE'].value_counts().reset_index()
             theme_counts.columns = ['Theme', 'Count']
+            
+            # --- THE RESTORED DONUT CHART ---
             fig_donut = px.pie(theme_counts.head(7), values='Count', names='Theme', hole=0.6, color_discrete_sequence=px.colors.qualitative.G10)
             fig_donut.update_layout(height=350, showlegend=False)
             fig_donut.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig_donut, use_container_width=True)
             
-            # --- RESTORED THEME DRILL DOWN ---
-            with st.expander("Drill Down: Inspect Themes"):
+            # --- THE RESTORED DRILL DOWN & NEW DEFINITIONS ---
+            with st.expander("Drill Down: Inspect Themes & Definitions"):
+                st.markdown("""
+                **Narrative Bucket Definitions:**
+                * **Macro:** Fed policy, Interest Rates, Inflation, GDP Data.
+                * **Earnings:** Quarterly reports, Guidance updates, Revenue beats/misses.
+                * **Mergers:** M&A activity, Buyouts, Spinoffs.
+                * **Regulation:** Lawsuits, Antitrust, Gov Policy changes.
+                * **Product:** New launches, Tech breakthroughs, FDA approvals.
+                * **Personnel:** CEO changes, Layoffs, Board restructuring.
+                """)
+                
                 options = theme_counts['Theme'].tolist()
-                theme = st.selectbox("Select Theme:", options=options) if options else None
+                theme = st.selectbox("Select Theme to Filter News:", options=options) if options else None
                 if theme:
                     subset = display_df[display_df['EVENT_TYPE'] == theme][['TICKER', 'TITLE', 'URL']]
                     st.dataframe(subset, hide_index=True, use_container_width=True,
                         column_config={"URL": st.column_config.LinkColumn("Source", display_text="Read Article")})
 
-    # --- FORENSIC ANALYSIS SECTION (INTERACTIVE) ---
+    # --- FORENSIC ANALYSIS SECTION ---
     st.subheader("Forensic Sentiment Analysis")
     st.markdown("Select specific articles to calculate their individual **Weight** vs. the Market Average.")
     
