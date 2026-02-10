@@ -1,0 +1,9 @@
+streamlit
+snowflake-snowpark-python
+pandas
+plotly
+numpy
+openai
+feedparser
+yfinance
+snowflake-connector-python
