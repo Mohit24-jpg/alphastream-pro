@@ -1,7 +1,10 @@
 # 📈 AlphaStream Pro
 **Real-Time Financial Intelligence Engine | Powered by GenAI & Snowflake**
 
-### 🚀 [Launch Live App] (https://alphastream-pro-mohitvaid.streamlit.app/)| 📺 [Watch Demo]https://www.linkedin.com/posts/activity-7427116679391879168-gwyf?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAABsCPJkBE_P9p0ITMLkYDCeqOhdPD2Y9Eo8
+### 🚀 [Launch Live App] (https://alphastream-pro-mohitvaid.streamlit.app/)|
+
+
+📺 [Watch Demo]https://www.linkedin.com/posts/activity-7427116679391879168-gwyf?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAABsCPJkBE_P9p0ITMLkYDCeqOhdPD2Y9Eo8
 
 ![Dashboard Preview](assets/dashboard_screenshot.png)
 
