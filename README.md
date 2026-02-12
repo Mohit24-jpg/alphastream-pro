@@ -6,7 +6,7 @@
 
 📺 [Watch Demo]https://www.linkedin.com/posts/activity-7427116679391879168-gwyf?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAABsCPJkBE_P9p0ITMLkYDCeqOhdPD2Y9Eo8
 
-![Dashboard Preview](assets/dashboard_screenshot.png)
+![Dashboard Preview](assets/dashboard_screenshot.jpg)
 
 ## 📖 Executive Summary
 AlphaStream Pro is an event-driven analytics platform designed to solve the "unstructured data" problem in finance. It ingests live news feeds, quantifies market sentiment using GPT-4, and persists data to Snowflake for historical trend analysis.
